@@ -1,0 +1,143 @@
+<h1>Pork enjoyer tool</h1>
+<div>X coordinate here</div>
+<input #x (keyup)="(0)" />
+<div>Y coordinate here</div>
+<input #y (keyup)="(0)" />
+<p>Enter Oasis data here</p>
+<input #oases />
+
+<button type="button" (click)="calc(oases.value, x.value, y.value)">
+  Calculate
+</button>
+
+<div *ngIf="this.hits">
+  <div>Best oases are:</div>
+  <!-- <div style="width: 500px; white-space: pre-line">{{ this.hits }}</div> -->
+</div>
+<!-- displayedColumns: string[] = [
+'value',
+'totalRes',
+'distance',
+'animals',
+'resInOasis',
+    'link',
+'steppesNeeded',
+'marksNeeded',
+]; -->
+<table
+  mat-table
+  [dataSource]="this.dataSource"
+  matSort
+  (matSortChange)="announceSortChange($event)"
+  matSortActive="value"
+  class="mat-elevation-z8"
+>
+  <!-- Value Column -->
+  <ng-container matColumnDef="value">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by number"
+    >
+      Value
+    </th>
+    <td mat-cell *matCellDef="let element">{{ element.value }}</td>
+  </ng-container>
+
+  <!-- totalRes Column -->
+  <ng-container matColumnDef="totalRes">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by number"
+    >
+      total res
+    </th>
+    <td mat-cell *matCellDef="let element">{{ element.totalRes }}</td>
+  </ng-container>
+
+  <!-- distance Column -->
+  <ng-container matColumnDef="distance">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by number"
+    >
+      distance
+    </th>
+    <td mat-cell *matCellDef="let element">{{ element.distance }}</td>
+  </ng-container>
+
+  <!-- animals Column -->
+  <ng-container matColumnDef="animals">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by number"
+    >
+      animals
+    </th>
+    <td mat-cell *matCellDef="let element">{{ element.animals }}</td>
+  </ng-container>
+
+  <!-- resInOasis Column -->
+  <ng-container matColumnDef="resInOasis">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by number"
+    >
+      res in oasis
+    </th>
+    <td mat-cell *matCellDef="let element">{{ element.resInOasis }}</td>
+  </ng-container>
+
+  <!-- link Column -->
+  <ng-container matColumnDef="link">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by number"
+    >
+      link
+    </th>
+    <td mat-cell *matCellDef="let element">
+      <a [href]="element.link">link</a>
+    </td>
+  </ng-container>
+
+  <!-- marksNeeded Column -->
+  <ng-container matColumnDef="marksNeeded">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by number"
+    >
+      marks needed
+    </th>
+    <td mat-cell *matCellDef="let element">{{ element.marksNeeded }}</td>
+  </ng-container>
+
+  <!-- steppesNeeded Column -->
+  <ng-container matColumnDef="steppesNeeded">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by number"
+    >
+      steppes needed
+    </th>
+    <td mat-cell *matCellDef="let element">{{ element.steppesNeeded }}</td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+</table>
