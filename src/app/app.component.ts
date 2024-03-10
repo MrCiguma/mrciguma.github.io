@@ -91,6 +91,8 @@ export class AppComponent {
       distance: number;
       value: number;
       link: string;
+      steppesLink: string;
+      marksLink: string;
     }[] = [];
 
     this.oases.forEach((o: Oasis) => {
@@ -103,9 +105,14 @@ export class AppComponent {
         distance: Math.round(this.calcDistance(o.position)),
         value: 0,
         link: this.getLink(o.position),
+        steppesLink: '',
+        marksLink: '',
       };
 
       row.value = Math.round(row.totalRes / row.distance);
+      let mapId = (200 - o.position.y) * 401 + (201 + o.position.x);
+      row.steppesLink = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t4]=${row.steppesNeeded}`;
+      row.marksLink = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t5]=${row.marksNeeded}`;
 
       if (row.value > 0) {
         dataSource.push(row);

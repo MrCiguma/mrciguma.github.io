@@ -122,7 +122,9 @@
     >
       marks needed
     </th>
-    <td mat-cell *matCellDef="let element">{{ element.marksNeeded }}</td>
+    <td mat-cell *matCellDef="let element">
+      <a [href]="element.marksLink">{{ element.marksNeeded }}</a>
+    </td>
   </ng-container>
 
   <!-- steppesNeeded Column -->
@@ -135,7 +137,9 @@
     >
       steppes needed
     </th>
-    <td mat-cell *matCellDef="let element">{{ element.steppesNeeded }}</td>
+    <td mat-cell *matCellDef="let element">
+      <a [href]="element.steppesLink">{{ element.steppesNeeded }}</a>
+    </td>
   </ng-container>
 
   <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
