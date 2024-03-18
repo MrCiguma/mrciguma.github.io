@@ -8,6 +8,7 @@ import {
   Animal,
   AnimalData,
   OasisType,
+  Sim,
 } from './app.model';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import '@angular/compiler';
@@ -33,6 +34,8 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 export class AppComponent {
   x: number = 0;
   y: number = 0;
+  steppesLvl: number = 0;
+  basePower: number = 120;
   announceSortChange($event: Sort) {
     console.log('sort' + $event.direction + $event.active);
   }
@@ -49,6 +52,8 @@ export class AppComponent {
     'resInOasis',
     'link',
     'steppesNeeded',
+    'suggestedSim',
+    'sims',
     'marksNeeded',
   ];
 
@@ -65,10 +70,13 @@ export class AppComponent {
     this.readData();
   }
 
-  calc(map: string, x: string, y: string) {
+  calc(map: string, x: string, y: string, steppesLvl: string) {
     let obj: Map = JSON.parse(map);
     this.x = parseInt(x);
     this.y = parseInt(y);
+    if (steppesLvl) {
+      this.steppesLvl = parseInt(steppesLvl);
+    }
 
     obj.tiles.forEach((t: Tile) =>
       this.isNew(this.parse(t)) ? this.oases.push(this.parse(t)) : null
@@ -93,6 +101,8 @@ export class AppComponent {
       link: string;
       steppesLink: string;
       marksLink: string;
+      sims: Sim[];
+      suggestedSim: Sim;
     }[] = [];
 
     this.oases.forEach((o: Oasis) => {
@@ -101,12 +111,17 @@ export class AppComponent {
         animals: this.animalToString(o.animals),
         steppesNeeded: Math.round(o.currentRes / 75),
         marksNeeded: Math.round(o.currentRes / 105),
-        totalRes: Math.round(o.currentRes + this.animalToRes(o.animals)),
+        totalRes: Math.round(o.currentRes + this.animalToRes(o.animals, 1)),
         distance: Math.round(this.calcDistance(o.position)),
         value: 0,
         link: this.getLink(o.position),
         steppesLink: '',
         marksLink: '',
+        sims: [] as Sim[],
+        suggestedSim: this.getSuggested(
+          o.animals,
+          Math.round(o.currentRes / 75)
+        ),
       };
 
       row.value = Math.round(row.totalRes / row.distance);
@@ -114,12 +129,96 @@ export class AppComponent {
       row.steppesLink = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t4]=${row.steppesNeeded}`;
       row.marksLink = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t5]=${row.marksNeeded}`;
 
+      row.sims = this.getSims(o.animals, row.steppesNeeded);
+
+      row.sims.forEach((sim) => {
+        sim.link = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t4]=${sim.number}`;
+      });
+
+      row.suggestedSim.link = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t4]=${row.suggestedSim.number}`;
+
       if (row.value > 0) {
         dataSource.push(row);
       }
     });
 
     return dataSource;
+  }
+
+  getSuggested(animals: Animal[], minSteppes: any): Sim {
+    let steppesNumber = minSteppes;
+    let sim: Sim = {
+      link: '',
+      number: steppesNumber,
+      percent: 0,
+    };
+
+    let maxValue = 0;
+
+    while (steppesNumber < 1000) {
+      let lossRatio = this.calcLossRatio(steppesNumber, animals);
+      let losses = lossRatio[1];
+      let bounty = lossRatio[2];
+
+      let value = (bounty - losses) / steppesNumber;
+
+      if (value > maxValue) {
+        maxValue = value;
+        sim.number = steppesNumber + 3;
+        sim.percent = lossRatio[0];
+      }
+
+      steppesNumber++;
+    }
+
+    return sim;
+  }
+
+  getSims(animals: Animal[], minSteppes: number): Sim[] {
+    let ratio = 1;
+    let steppesNumber = minSteppes;
+    let result = [];
+
+    while (steppesNumber < 1000) {
+      let lossRatio = this.calcLossRatio(steppesNumber, animals)[0];
+      if (lossRatio < ratio) {
+        let sim: Sim = {
+          link: '',
+          number: steppesNumber,
+          percent: ratio,
+        };
+        result.push(sim);
+        ratio -= 0.25;
+        steppesNumber--;
+        if (ratio <= 0) return result;
+      }
+      steppesNumber++;
+    }
+    return result;
+  }
+
+  calcLossRatio(steppesNumber: number, animals: Animal[]): number[] {
+    // https://blog.travian.com/sl/2023/10/game-secrets-smithy-and-total-strength-of-an-army/
+    let offPower =
+      steppesNumber *
+      (this.basePower +
+        (this.basePower + (300 * 2) / 7) *
+          (Math.pow(1.007, this.steppesLvl) - 1));
+    offPower *= 1.08;
+    let deffPower = this.animalToCavDeff(animals) + 10;
+
+    if (offPower < deffPower) return [5, 5, 5];
+
+    // https://blog.travian.com/2023/09/game-secrets-combat-system-formulas-written-by-kirilloid/
+    let ratioX = Math.pow(deffPower / offPower, 1.5);
+    let losses = ratioX / (1 + ratioX);
+
+    let bounty = this.animalToRes(animals, 1 - losses);
+    let result: number[] = [];
+    result.push((Math.round(steppesNumber * losses) * 895) / bounty);
+    result.push(Math.round(steppesNumber * losses) * 895);
+    result.push(bounty);
+    return result;
   }
 
   getLink(position: Position) {
@@ -144,12 +243,23 @@ export class AppComponent {
     return Math.sqrt(xDist * xDist + yDist * yDist);
   }
 
-  animalToRes(animals: Animal[]) {
+  animalToRes(animals: Animal[], ratio: number): number {
     let sum = 0;
     animals.forEach((a: Animal) => {
       let res = this.data.find((v: AnimalData) => v.id == a.id)?.res;
       if (res) {
-        sum += a.count * res;
+        sum += Math.round(a.count * ratio) * res;
+      }
+    });
+    return sum;
+  }
+
+  animalToCavDeff(animals: Animal[]) {
+    let sum = 0;
+    animals.forEach((a: Animal) => {
+      let cavDeff = this.data.find((v: AnimalData) => v.id == a.id)?.cavDeff;
+      if (cavDeff) {
+        sum += a.count * cavDeff;
       }
     });
     return sum;
@@ -235,6 +345,8 @@ export class AppComponent {
           2 * Math.min(cap, 40 * hoursSinceHit) +
           2 * Math.min(cap, 10 * hoursSinceHit)
         );
+      case OasisType.Occupied:
+        return 0;
     }
   }
 
@@ -279,6 +391,9 @@ export class AppComponent {
   }
 
   getOasisType(tile: Tile): OasisType {
+    let occupied = tile.text.includes('spieler');
+    if (occupied) return OasisType.Occupied;
+
     let matchCount = tile.text.split('25%').length - 1;
     switch (matchCount) {
       case 0:

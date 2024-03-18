@@ -2,6 +2,7 @@ export enum OasisType {
   Single50,
   Single,
   Double,
+  Occupied,
 }
 
 export interface Map {
@@ -38,4 +39,10 @@ export interface AnimalData {
   name: string;
   cavDeff: number;
   res: number;
+}
+
+export interface Sim {
+  link: string;
+  number: number;
+  percent: number;
 }

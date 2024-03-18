@@ -1,12 +1,20 @@
 <h1>Pork enjoyer tool</h1>
+<a href="https://www.youtube.com/watch?v=BUdyHsmOQfc&ab_channel=JohnSmith"
+  >How to use</a
+>
 <div>X coordinate here</div>
 <input #x (keyup)="(0)" />
 <div>Y coordinate here</div>
 <input #y (keyup)="(0)" />
+<div>enter steppes upgrade lvl here</div>
+<input #steppesLvl (keyup)="(0)" />
 <p>Enter Oasis data here</p>
 <input #oases />
 
-<button type="button" (click)="calc(oases.value, x.value, y.value)">
+<button
+  type="button"
+  (click)="calc(oases.value, x.value, y.value, steppesLvl.value)"
+>
   Calculate
 </button>
 
@@ -139,6 +147,41 @@
     </th>
     <td mat-cell *matCellDef="let element">
       <a [href]="element.steppesLink">{{ element.steppesNeeded }}</a>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="suggestedSim">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by number"
+    >
+      suggested steppes number
+    </th>
+    <td mat-cell *matCellDef="let element">
+      <a [href]="element.suggestedSim.link"
+        >{{ element.suggestedSim.number }},
+        {{ (element.suggestedSim.percent * 100).toFixed(0) }}%</a
+      >
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="sims">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by number"
+    >
+      Steppes needed to have less than x% loss ratio
+    </th>
+    <td mat-cell *matCellDef="let element">
+      <li *ngFor="let sim of element.sims">
+        <a [href]="sim.link"
+          >{{ sim.number }}, {{ (sim.percent * 100).toFixed(0) }}%</a
+        >
+      </li>
     </td>
   </ng-container>
 
