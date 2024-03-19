@@ -8,35 +8,27 @@
 <input #y (keyup)="(0)" />
 <div>enter steppes upgrade lvl here</div>
 <input #steppesLvl (keyup)="(0)" />
+<div>only show oases with suggested steppes above this number</div>
+<input #min (keyup)="(0)" />
 <p>Enter Oasis data here</p>
 <input #oases />
 
 <button
   type="button"
-  (click)="calc(oases.value, x.value, y.value, steppesLvl.value)"
+  (click)="calc(oases.value, x.value, y.value, steppesLvl.value, min.value)"
 >
   Calculate
 </button>
+<button type="button" (click)="oases.value = ''">Clear</button>
 
 <div *ngIf="this.hits">
   <div>Best oases are:</div>
   <!-- <div style="width: 500px; white-space: pre-line">{{ this.hits }}</div> -->
 </div>
-<!-- displayedColumns: string[] = [
-'value',
-'totalRes',
-'distance',
-'animals',
-'resInOasis',
-    'link',
-'steppesNeeded',
-'marksNeeded',
-]; -->
 <table
   mat-table
   [dataSource]="this.dataSource"
   matSort
-  (matSortChange)="announceSortChange($event)"
   matSortActive="value"
   class="mat-elevation-z8"
 >

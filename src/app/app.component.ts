@@ -36,9 +36,8 @@ export class AppComponent {
   y: number = 0;
   steppesLvl: number = 0;
   basePower: number = 120;
-  announceSortChange($event: Sort) {
-    console.log('sort' + $event.direction + $event.active);
-  }
+  minSteppes: number = 0;
+  announceSortChange($event: Sort) {}
   title = 'porkEnjoyer';
   hits = '';
   oases: Oasis[] = [];
@@ -70,26 +69,28 @@ export class AppComponent {
     this.readData();
   }
 
-  calc(map: string, x: string, y: string, steppesLvl: string) {
+  calc(map: string, x: string, y: string, steppesLvl: string, min: string) {
+    console.log('start' + new Date().toISOString());
     let obj: Map = JSON.parse(map);
-    this.x = parseInt(x);
-    this.y = parseInt(y);
-    if (steppesLvl) {
-      this.steppesLvl = parseInt(steppesLvl);
-    }
+    if (x) this.x = parseInt(x);
+    if (y) this.y = parseInt(y);
+    if (steppesLvl) this.steppesLvl = parseInt(steppesLvl);
+    if (min) this.minSteppes = parseInt(min);
 
-    obj.tiles.forEach((t: Tile) =>
-      this.isNew(this.parse(t)) ? this.oases.push(this.parse(t)) : null
-    );
+    obj.tiles.forEach((t: Tile) => {
+      let o = this.parse(t);
+      if (o && this.isNew(o)) {
+        this.oases.push(o);
+      }
+    });
 
     this.hits = '';
     this.dataSource = new MatTableDataSource(this.oasesToGrid());
     this.dataSource.sort = this.sort;
+    console.log('start' + new Date().toISOString());
   }
 
   oasesToGrid() {
-    console.log(this.oases);
-
     let dataSource: {
       resInOasis: number;
       animals: string;
@@ -106,6 +107,7 @@ export class AppComponent {
     }[] = [];
 
     this.oases.forEach((o: Oasis) => {
+      if (Math.round(o.currentRes + this.animalToRes(o.animals, 1)) < 1) return;
       let row = {
         resInOasis: Math.round(o.currentRes),
         animals: this.animalToString(o.animals),
@@ -125,6 +127,7 @@ export class AppComponent {
       };
 
       row.value = Math.round(row.totalRes / row.distance);
+
       let mapId = (200 - o.position.y) * 401 + (201 + o.position.x);
       row.steppesLink = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t4]=${row.steppesNeeded}`;
       row.marksLink = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t5]=${row.marksNeeded}`;
@@ -137,7 +140,7 @@ export class AppComponent {
 
       row.suggestedSim.link = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t4]=${row.suggestedSim.number}`;
 
-      if (row.value > 0) {
+      if (row.suggestedSim.number > this.minSteppes) {
         dataSource.push(row);
       }
     });
@@ -155,6 +158,8 @@ export class AppComponent {
 
     let maxValue = 0;
 
+    let step = 1;
+
     while (steppesNumber < 1000) {
       let lossRatio = this.calcLossRatio(steppesNumber, animals);
       let losses = lossRatio[1];
@@ -168,7 +173,10 @@ export class AppComponent {
         sim.percent = lossRatio[0];
       }
 
-      steppesNumber++;
+      steppesNumber += step;
+      if (steppesNumber % 100 < step) {
+        step += 2;
+      }
     }
 
     return sim;
@@ -294,12 +302,13 @@ export class AppComponent {
             res: parseInt(splitLine[3]) * 160,
           });
         });
-
-        console.log(this.data);
       });
   }
 
-  parse(tile: Tile): Oasis {
+  parse(tile: Tile): Oasis | null {
+    if (tile.did != -1) {
+      return null;
+    }
     let oasis: Oasis = {
       position: tile.position,
       animals: [],
@@ -372,7 +381,6 @@ export class AppComponent {
         '[0-9]{2}.[0-9]{2}.[0-9]{2}, [0-9]{2}:[0-9]{2}'
       );
       if (!dateString) {
-        console.log(tile.text);
         return date;
       }
       var dateSplit = dateString[0].split('.');
