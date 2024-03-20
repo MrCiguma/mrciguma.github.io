@@ -159,21 +159,20 @@
     </td>
   </ng-container>
 
-  <ng-container matColumnDef="sims">
+  <ng-container matColumnDef="suggestedRainbow">
     <th
       mat-header-cell
       *matHeaderCellDef
       mat-sort-header
       sortActionDescription="Sort by number"
     >
-      Steppes needed to have less than x% loss ratio
+      suggested rainbow number
     </th>
     <td mat-cell *matCellDef="let element">
-      <li *ngFor="let sim of element.sims">
-        <a [href]="sim.link"
-          >{{ sim.number }}, {{ (sim.percent * 100).toFixed(0) }}%</a
-        >
-      </li>
+      <a [href]="element.suggestedRainbow.link"
+        >{{ element.suggestedRainbow.number }},
+        {{ (element.suggestedRainbow.percent * 100).toFixed(0) }}%</a
+      >
     </td>
   </ng-container>
 

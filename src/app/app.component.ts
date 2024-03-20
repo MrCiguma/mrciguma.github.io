@@ -52,7 +52,7 @@ export class AppComponent {
     'link',
     'steppesNeeded',
     'suggestedSim',
-    'sims',
+    'suggestedRainbow',
     'marksNeeded',
   ];
 
@@ -104,6 +104,7 @@ export class AppComponent {
       marksLink: string;
       sims: Sim[];
       suggestedSim: Sim;
+      suggestedRainbow: Sim;
     }[] = [];
 
     this.oases.forEach((o: Oasis) => {
@@ -124,6 +125,10 @@ export class AppComponent {
           o.animals,
           Math.round(o.currentRes / 75)
         ),
+        suggestedRainbow: this.getSuggestedRainbow(
+          o.animals,
+          Math.round(o.currentRes / (75 + 105 + 80))
+        ),
       };
 
       row.value = Math.round(row.totalRes / row.distance);
@@ -140,12 +145,45 @@ export class AppComponent {
 
       row.suggestedSim.link = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t4]=${row.suggestedSim.number}`;
 
+      row.suggestedRainbow.link = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t4]=${row.suggestedRainbow.number}&troop[t5]=${row.suggestedRainbow.number}&troop[t6]=${row.suggestedRainbow.number}`;
+
       if (row.suggestedSim.number > this.minSteppes) {
         dataSource.push(row);
       }
     });
 
     return dataSource;
+  }
+
+  getSuggestedRainbow(animals: Animal[], minRainbow: number): Sim {
+    let rainbowNumber = minRainbow;
+    let sim: Sim = {
+      link: '',
+      number: rainbowNumber,
+      percent: 0,
+    };
+
+    let maxValue = 0;
+
+    let step = 1;
+
+    while (rainbowNumber < 333) {
+      let lossRatio = this.calcLossRatioRainbow(rainbowNumber, animals);
+      let losses = lossRatio[1];
+      let bounty = lossRatio[2];
+
+      let value = (bounty - losses) / rainbowNumber;
+
+      if (value > maxValue) {
+        maxValue = value;
+        sim.number = rainbowNumber + 1;
+        sim.percent = lossRatio[0];
+      }
+
+      rainbowNumber += step;
+    }
+
+    return sim;
   }
 
   getSuggested(animals: Animal[], minSteppes: any): Sim {
@@ -202,6 +240,61 @@ export class AppComponent {
       }
       steppesNumber++;
     }
+    return result;
+  }
+
+  calcLossRatioRainbow(rainbowNumber: number, animals: Animal[]): number[] {
+    // https://blog.travian.com/sl/2023/10/game-secrets-smithy-and-total-strength-of-an-army/
+    let units = [
+      {
+        basePower: 120,
+        consumption: 2,
+        level: 20,
+        cost: 895,
+      },
+      {
+        basePower: 110,
+        consumption: 2,
+        level: 20,
+        cost: 1050,
+      },
+      {
+        basePower: 120,
+        consumption: 2,
+        level: 20,
+        cost: 1760,
+      },
+    ];
+
+    let offPower = 0;
+    let cost = 0;
+
+    units.forEach((u) => {
+      offPower +=
+        u.basePower +
+        (u.basePower + (300 * u.consumption) / 7) *
+          (Math.pow(1.007, u.level) - 1);
+      console.log(offPower);
+      cost += u.cost;
+    });
+
+    offPower *= rainbowNumber * 1.08;
+
+    console.log(offPower);
+    console.log(rainbowNumber);
+    let deffPower = this.animalToCavDeff(animals) + 10;
+
+    if (offPower < deffPower) return [5, 5, 5];
+
+    // https://blog.travian.com/2023/09/game-secrets-combat-system-formulas-written-by-kirilloid/
+    let ratioX = Math.pow(deffPower / offPower, 1.5);
+    let losses = ratioX / (1 + ratioX);
+
+    let bounty = this.animalToRes(animals, 1 - losses);
+    let result: number[] = [];
+    result.push((Math.round(rainbowNumber * losses) * cost) / bounty);
+    result.push(Math.round(rainbowNumber * losses) * cost);
+    result.push(bounty);
     return result;
   }
 
