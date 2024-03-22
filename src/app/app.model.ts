@@ -45,4 +45,6 @@ export interface Sim {
   link: string;
   number: number;
   percent: number;
+  bounty: number;
+  losses: number;
 }

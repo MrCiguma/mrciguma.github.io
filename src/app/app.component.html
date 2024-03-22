@@ -8,14 +8,28 @@
 <input #y (keyup)="(0)" />
 <div>enter steppes upgrade lvl here</div>
 <input #steppesLvl (keyup)="(0)" />
-<div>only show oases with suggested steppes above this number</div>
+<div>min steppes</div>
 <input #min (keyup)="(0)" />
+<div>max steppes</div>
+<input #max (keyup)="(0)" />
+<div>max loss percentage</div>
+<input #maxLoss (keyup)="(0)" />
 <p>Enter Oasis data here</p>
 <input #oases />
 
 <button
   type="button"
-  (click)="calc(oases.value, x.value, y.value, steppesLvl.value, min.value)"
+  (click)="
+    calc(
+      oases.value,
+      x.value,
+      y.value,
+      steppesLvl.value,
+      min.value,
+      max.value,
+      maxLoss.value
+    )
+  "
 >
   Calculate
 </button>

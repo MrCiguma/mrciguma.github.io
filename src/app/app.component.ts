@@ -37,6 +37,8 @@ export class AppComponent {
   steppesLvl: number = 0;
   basePower: number = 120;
   minSteppes: number = 0;
+  maxSteppes: number = 10000;
+  maxLoss: number = 1;
   announceSortChange($event: Sort) {}
   title = 'porkEnjoyer';
   hits = '';
@@ -69,13 +71,23 @@ export class AppComponent {
     this.readData();
   }
 
-  calc(map: string, x: string, y: string, steppesLvl: string, min: string) {
+  calc(
+    map: string,
+    x: string,
+    y: string,
+    steppesLvl: string,
+    min: string,
+    max: string,
+    maxLoss: string
+  ) {
     console.log('start' + new Date().toISOString());
     let obj: Map = JSON.parse(map);
     if (x) this.x = parseInt(x);
     if (y) this.y = parseInt(y);
     if (steppesLvl) this.steppesLvl = parseInt(steppesLvl);
     if (min) this.minSteppes = parseInt(min);
+    if (max) this.maxSteppes = parseInt(max);
+    if (maxLoss) this.maxLoss = parseInt(maxLoss) / 100;
 
     obj.tiles.forEach((t: Tile) => {
       let o = this.parse(t);
@@ -102,7 +114,6 @@ export class AppComponent {
       link: string;
       steppesLink: string;
       marksLink: string;
-      sims: Sim[];
       suggestedSim: Sim;
       suggestedRainbow: Sim;
     }[] = [];
@@ -120,7 +131,6 @@ export class AppComponent {
         link: this.getLink(o.position),
         steppesLink: '',
         marksLink: '',
-        sims: [] as Sim[],
         suggestedSim: this.getSuggested(
           o.animals,
           Math.round(o.currentRes / 75)
@@ -131,23 +141,23 @@ export class AppComponent {
         ),
       };
 
-      row.value = Math.round(row.totalRes / row.distance);
+      row.value =
+        (row.resInOasis + row.suggestedSim.bounty - row.suggestedSim.losses) /
+        (row.suggestedSim.number * row.distance);
+      row.value = Math.round(row.value * 1000);
 
       let mapId = (200 - o.position.y) * 401 + (201 + o.position.x);
       row.steppesLink = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t4]=${row.steppesNeeded}`;
       row.marksLink = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t5]=${row.marksNeeded}`;
 
-      row.sims = this.getSims(o.animals, row.steppesNeeded);
-
-      row.sims.forEach((sim) => {
-        sim.link = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t4]=${sim.number}`;
-      });
-
       row.suggestedSim.link = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t4]=${row.suggestedSim.number}`;
 
       row.suggestedRainbow.link = `https://ts9.x1.international.travian.com/build.php?gid=16&tt=2&eventType=4&targetMapId=${mapId}&troop[t4]=${row.suggestedRainbow.number}&troop[t5]=${row.suggestedRainbow.number}&troop[t6]=${row.suggestedRainbow.number}`;
 
-      if (row.suggestedSim.number > this.minSteppes) {
+      if (
+        row.suggestedSim.number > this.minSteppes &&
+        row.suggestedSim.number < this.maxSteppes
+      ) {
         dataSource.push(row);
       }
     });
@@ -161,26 +171,33 @@ export class AppComponent {
       link: '',
       number: rainbowNumber,
       percent: 0,
+      bounty: 0,
+      losses: 0,
     };
 
     let maxValue = 0;
 
     let step = 1;
 
-    while (rainbowNumber < 333) {
+    while (rainbowNumber < 1000) {
       let lossRatio = this.calcLossRatioRainbow(rainbowNumber, animals);
       let losses = lossRatio[1];
       let bounty = lossRatio[2];
 
       let value = (bounty - losses) / rainbowNumber;
 
-      if (value > maxValue) {
+      if (value > maxValue && lossRatio[0] < this.maxLoss) {
         maxValue = value;
         sim.number = rainbowNumber + 1;
         sim.percent = lossRatio[0];
+        sim.bounty = bounty;
+        sim.losses = losses;
       }
 
       rainbowNumber += step;
+      if (rainbowNumber % 100 < step) {
+        step += 2;
+      }
     }
 
     return sim;
@@ -192,23 +209,27 @@ export class AppComponent {
       link: '',
       number: steppesNumber,
       percent: 0,
+      bounty: 0,
+      losses: 0,
     };
 
     let maxValue = 0;
 
     let step = 1;
 
-    while (steppesNumber < 1000) {
+    while (steppesNumber < 3000) {
       let lossRatio = this.calcLossRatio(steppesNumber, animals);
       let losses = lossRatio[1];
       let bounty = lossRatio[2];
 
       let value = (bounty - losses) / steppesNumber;
 
-      if (value > maxValue) {
+      if (value > maxValue && lossRatio[0] < this.maxLoss) {
         maxValue = value;
         sim.number = steppesNumber + 3;
         sim.percent = lossRatio[0];
+        sim.bounty = bounty;
+        sim.losses = losses;
       }
 
       steppesNumber += step;
@@ -218,29 +239,6 @@ export class AppComponent {
     }
 
     return sim;
-  }
-
-  getSims(animals: Animal[], minSteppes: number): Sim[] {
-    let ratio = 1;
-    let steppesNumber = minSteppes;
-    let result = [];
-
-    while (steppesNumber < 1000) {
-      let lossRatio = this.calcLossRatio(steppesNumber, animals)[0];
-      if (lossRatio < ratio) {
-        let sim: Sim = {
-          link: '',
-          number: steppesNumber,
-          percent: ratio,
-        };
-        result.push(sim);
-        ratio -= 0.25;
-        steppesNumber--;
-        if (ratio <= 0) return result;
-      }
-      steppesNumber++;
-    }
-    return result;
   }
 
   calcLossRatioRainbow(rainbowNumber: number, animals: Animal[]): number[] {
@@ -274,14 +272,11 @@ export class AppComponent {
         u.basePower +
         (u.basePower + (300 * u.consumption) / 7) *
           (Math.pow(1.007, u.level) - 1);
-      console.log(offPower);
       cost += u.cost;
     });
 
     offPower *= rainbowNumber * 1.08;
 
-    console.log(offPower);
-    console.log(rainbowNumber);
     let deffPower = this.animalToCavDeff(animals) + 10;
 
     if (offPower < deffPower) return [5, 5, 5];
