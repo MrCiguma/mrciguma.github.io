@@ -44,6 +44,7 @@ export class AppComponent {
   hits = '';
   oases: Oasis[] = [];
   data: AnimalData[] = [];
+  totalClicked = 0;
 
   displayedColumns: string[] = [
     'value',
@@ -516,5 +517,9 @@ export class AppComponent {
     }
 
     return true;
+  }
+
+  addToTotal(x: number) {
+    this.totalClicked += x;
   }
 }
