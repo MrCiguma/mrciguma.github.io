@@ -1,10 +1,10 @@
-31,Rat,20,1	
-32,Spider,40,1	
-33,Serpent,60,1	
-34,Bat,50,1	
-35,Wild boar,33,2	
-36,Wolf,70,2	
-37,Bear,200,3	
-38,Crocodile,240,3	
-39,Tiger,250,3	
-40,Elephant,520,5
+31,Rat,25,20,1	
+32,Spider,35,40,1	
+33,Serpent,40,60,1	
+34,Bat,66,50,1	
+35,Wild boar,70,33,2	
+36,Wolf,80,70,2	
+37,Bear,140,200,3	
+38,Crocodile,380,240,3	
+39,Tiger,170,250,3	
+40,Elephant,440,520,5

@@ -37,11 +37,13 @@ export interface Animal {
 export interface AnimalData {
   id: number;
   name: string;
+  infDeff: number;
   cavDeff: number;
   res: number;
 }
 
 export interface Sim {
+  offLosses: number;
   link: string;
   number: number;
   percent: number;
